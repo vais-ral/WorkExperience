@@ -1,0 +1,5 @@
+conda create --name workexp python=3.5
+activate workexp
+conda install ccpi-viewer=0.10.0 -c ccpi -c conda-forge
+conda install ccpi-segmentation=0.10.0 -c ccpi -c conda-forge
+conda install pillow -c conda-forge
