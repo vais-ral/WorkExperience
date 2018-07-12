@@ -5,11 +5,90 @@ Created on Tue Mar 27 13:59:43 2018
 @author: ofn77899
 """
 
+
 import numpy
 from ccpi.segmentation.SimpleflexSegmentor import SimpleflexSegmentor
 from ccpi.viewer.CILViewer import CILViewer
 from ccpi.viewer.CILViewer2D import CILViewer2D, Converter
 import vtk
+
+#Text-based input system
+accept = False
+while accept == False:
+    yorn = input('Skip parameters entry?')
+    accept = True
+    if yorn == 'yes':
+        print('Building scene with default parameters...')
+        accept2 = False
+        while accept2 == False:
+            yorn2 = input('Create default animation?')
+            if yorn2 == 'yes':
+                CreateAnimation = True
+                accept2 = True
+            if yorn2 == 'no':
+                CreateAnimation = False
+                accept2 = True
+            else:
+                print('Your input was invalid. Please enter yes or no!')
+        InitialCameraPositionX = 70
+        InitialCameraPositionY = 200
+        InitialCameraPositionZ = 50
+        
+        FrameCount = 100
+        
+        ViewUp1 = 0
+        ViewUp2 = 0
+        ViewUp3 = 1
+        
+        FocalPointX = 30
+        FocalPointY = 30
+        FocalPointZ = 30
+        
+        AngleRangeStart = 0
+        AngleRangeEnd = 360
+        
+        ClippingRangeStart = 0
+        ClippingRangeEnd = 360
+        
+        accept = True
+    if yorn == 'no':
+        valid = False
+        while valid == False:
+            try:
+                InitialCameraPositionX = int(input('Enter the initital camera position on the x-axis:'))
+                InitialCameraPositionY = int(input('Enter the initital camera position on the y-axis:'))
+                InitialCameraPositionZ = int(input('Enter the initital camera position on the z-axis:'))
+                
+                FrameCount = int(input('Enter number of frames for the animation:'))
+                
+                ViewUp1 = int(input('Enter the first viewup value:'))
+                ViewUp2 = int(input('Enter the second viewup value:'))
+                ViewUp3 = int(input('Enter the third viewup value:'))
+                
+                FocalPointX = int(input('Enter the x-coordinate for the camera focal point:'))
+                FocalPointY = int(input('Enter the y-coordinate for the camera focal point:'))
+                FocalPointZ = int(input('Enter the z-coordinate for the camera focal point:'))
+                
+                AngleRangeStart = int(input('Enter the first value for the angle range:'))
+                AngleRangeEnd = int(input('Enter the last value for the angle range:'))
+                
+                ClippingRangeStart = int(input('Set lowest value for clipping range:'))
+                ClippingRangeEnd = int(input('Set highest value for clipping range:'))
+                
+                CreateAnimation = True
+                
+            except ValueError:
+                print('One or more of your inputs were not valid! Try again')
+            else:
+                valid = True
+    else:
+        print('You input was invalid. Please enter yes or no!')
+
+InitialCameraPosition = (InitialCameraPositionX, InitialCameraPositionY, InitialCameraPositionZ)
+FocalPoint = (FocalPointX, FocalPointY, FocalPointZ)
+AngleRange = (AngleRangeStart, AngleRangeEnd)
+ClippingRange = (ClippingRangeStart, ClippingRangeEnd)
+ViewUp = (ViewUp1, ViewUp2, ViewUp3)
 
 def surface2vtkPolyData(coord_list, origin = (0,0,0), spacing=(1,1,1)):
     
@@ -80,7 +159,7 @@ def surface2vtkPolyData(coord_list, origin = (0,0,0), spacing=(1,1,1)):
     return trianglePolyData
 
 reader = vtk.vtkMetaImageReader()
-reader.SetFileName("fuel_uc_python.mha")
+reader.SetFileName("../../data/fuel_uc_python.mha")
 reader.Update()
 
 seg = SimpleflexSegmentor()
@@ -122,4 +201,50 @@ print (len(coord_list))
 v = CILViewer()
 v.setInput3DData(reader.GetOutput())
 v.displayPolyData(surface2vtkPolyData(coord_list, spacing=spacing))
+#v.startRenderLoop()
+
+dimX, dimY, dimZ = reader.GetOutput().GetDimensions()
+
+#Setting locked values for camera position
+locX = InitialCameraPosition[0]
+locY = InitialCameraPosition[1]
+locZ = InitialCameraPosition[2]
+
+#Setting camera position
+v.getCamera().SetPosition(InitialCameraPosition)
+v.getCamera().SetFocalPoint(FocalPoint)
+
+#Setting camera viewup 
+v.getCamera().SetViewUp(ViewUp)
+
+#Set camera clipping range
+v.getCamera().SetClippingRange(ClippingRange)
+
+#Defining distance from camera to focal point
+r = numpy.sqrt(((InitialCameraPosition[2]-FocalPoint[2])**2)
++(InitialCameraPosition[1]-FocalPoint[1])**2)
+print('Radius (distance from camera to focal point): {}'.format(r))
+
+camera = vtk.vtkCamera()
+camera.SetPosition(InitialCameraPosition)
+camera.SetFocalPoint(FocalPoint)
+camera.SetViewUp(ViewUp)
+v.getRenderer().SetActiveCamera(camera)
+
+if CreateAnimation == True:
+    #Animating the camera
+    for x in range(FrameCount):
+        angle = ((numpy.pi)*4/100)*x
+        NewLocationX = r*(numpy.sin(angle))+FocalPoint[0]
+        NewLocationY = r*(numpy.cos(angle))+FocalPoint[1]
+        NewLocationZ  = r*(numpy.cos(angle))+FocalPoint[2]
+        NewLocation = (NewLocationX, NewLocationY, locZ)
+        v.getCamera().SetPosition(NewLocation)
+    
+        #Rendering and saving the render
+        v.getRenderer().Render()
+        v.saveRender('test_{}.png'.format(x))
+
+
+
 v.startRenderLoop()
