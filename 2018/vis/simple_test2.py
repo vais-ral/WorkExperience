@@ -49,7 +49,7 @@ while accept == False:
         
         ClippingRangeStart = 0
         ClippingRangeEnd = 360
-        
+
         accept = True
     if yorn == 'no':
         valid = False
@@ -194,18 +194,19 @@ def createAnimation(viewer, FrameCount, InitialCameraPosition=None, FocalPoint=N
     camera.SetViewUp(ViewUp)
     viewer.getRenderer().SetActiveCamera(camera)
     
-    #Animating the camera
-    for x in range(FrameCount):
-        angle = ((numpy.pi)*2/100)*x
-        NewLocationX = r*(numpy.sin(angle))+FocalPoint[0]
-        NewLocationY = r*(numpy.cos(angle))+FocalPoint[1]
-        NewLocationZ  = r*(numpy.cos(angle))+FocalPoint[2]
-        NewLocation = (NewLocationX, NewLocationY, locZ)
-        viewer.getCamera().SetPosition(NewLocation)
-        
-        #Rendering and saving the render
-        viewer.getRenderer().Render()
-        viewer.saveRender('test_{}'.format(x))
+    if CreateAnimation == True:
+        #Animating the camera
+        for x in range(FrameCount):
+            angle = ((numpy.pi)*2/100)*x
+            NewLocationX = r*(numpy.sin(angle))+FocalPoint[0]
+            NewLocationY = r*(numpy.cos(angle))+FocalPoint[1]
+            NewLocationZ  = r*(numpy.cos(angle))+FocalPoint[2]
+            NewLocation = (NewLocationX, NewLocationY, locZ)
+            viewer.getCamera().SetPosition(NewLocation)
+            
+            #Rendering and saving the render
+            viewer.getRenderer().Render()
+            viewer.saveRender('test_{}'.format(x))
 
 reader = vtk.vtkMetaImageReader()
 reader.SetFileName("../../data/fuel_uc_python.mha")
@@ -281,11 +282,8 @@ viewer.displayPolyData(surface2vtkPolyData(coord_list, spacing=spacing))
 
 dimX, dimY, dimZ = reader.GetOutput().GetDimensions()
 
-print (len(FocalPoint), FocalPoint)
-
-createAnimation(viewer, FrameCount, InitialCameraPosition, FocalPoint, ClippingRange, AngleRange, ViewUp)
-
-viewer.createAnimation(viewer, FrameCount, InitialCameraPosition, FocalPoint, ClippingRange, AngleRange, ViewUp)
+#createAnimation(v, InitialCameraPosition, FocalPoint, AngleRange, ClippingRange, ViewUp)
+viewer.createAnimation(viewer=viewer)
 
 
 viewer.startRenderLoop()
